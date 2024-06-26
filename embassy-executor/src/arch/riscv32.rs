@@ -61,7 +61,7 @@ mod thread {
                     self.inner.poll();
                     // we do not care about race conditions between the load and store operations, interrupts
                     //will only set this value to true.
-                    critical_section::with(|_| {
+                    //critical_section::with(|_| {
                         // if there is work to do, loop back to polling
                         // TODO can we relax this?
                         if SIGNAL_WORK_THREAD_MODE.load(Ordering::SeqCst) {
@@ -71,7 +71,7 @@ mod thread {
                         else {
                             core::arch::asm!("wfi");
                         }
-                    });
+                    //});
                     // if an interrupt occurred while waiting, it will be serviced here
                 }
             }
