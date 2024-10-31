@@ -14,7 +14,6 @@ mod test_flash;
 
 // The expected value of the flash after an erase
 // TODO: Use the value provided by NorFlash when available
-pub(crate) const STATE_ERASE_VALUE: u8 = 0xFF;
 pub use boot_loader::{BootError, BootLoader, BootLoaderConfig};
 pub use firmware_updater::{
     BlockingFirmwareState, BlockingFirmwareUpdater, FirmwareState, FirmwareUpdater, FirmwareUpdaterConfig,
@@ -24,6 +23,7 @@ pub use firmware_updater::{
 pub(crate) const BOOT_MAGIC: u8 = 0xD0;
 pub(crate) const SWAP_MAGIC: u8 = 0xF0;
 pub(crate) const DFU_DETACH_MAGIC: u8 = 0xE0;
+pub(crate) const PROGRESS_MAGIC: u8 = 0xC0;
 
 /// The state of the bootloader after running prepare.
 #[derive(PartialEq, Eq, Debug)]

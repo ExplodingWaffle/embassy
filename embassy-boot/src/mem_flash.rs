@@ -130,6 +130,7 @@ impl<const SIZE: usize, const ERASE_SIZE: usize, const WRITE_SIZE: usize> NorFla
 {
     const WRITE_SIZE: usize = WRITE_SIZE;
     const ERASE_SIZE: usize = ERASE_SIZE;
+    const ERASE_VALUE: &'static [u8] = &[0xFF; WRITE_SIZE];
 
     fn write(&mut self, offset: u32, bytes: &[u8]) -> Result<(), Self::Error> {
         self.write(offset, bytes)
@@ -159,6 +160,7 @@ impl<const SIZE: usize, const ERASE_SIZE: usize, const WRITE_SIZE: usize> AsyncN
 {
     const WRITE_SIZE: usize = WRITE_SIZE;
     const ERASE_SIZE: usize = ERASE_SIZE;
+    const ERASE_VALUE: &'static [u8] = &[0xFF; WRITE_SIZE];
 
     async fn write(&mut self, offset: u32, bytes: &[u8]) -> Result<(), Self::Error> {
         self.write(offset, bytes)
