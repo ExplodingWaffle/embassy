@@ -6,7 +6,7 @@ use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 use embedded_storage::nor_flash::NorFlash;
 
 use super::FirmwareUpdaterConfig;
-use crate::{FirmwareUpdaterError, State, BOOT_MAGIC, DFU_DETACH_MAGIC, STATE_ERASE_VALUE, SWAP_MAGIC};
+use crate::{FirmwareUpdaterError, State, BOOT_MAGIC, DFU_DETACH_MAGIC, PROGRESS_MAGIC, SWAP_MAGIC};
 
 /// Blocking FirmwareUpdater is an application API for interacting with the BootLoader without the ability to
 /// 'mess up' the internal bootloader state
@@ -330,6 +330,10 @@ impl<'d, STATE: NorFlash> BlockingFirmwareState<'d, STATE> {
     /// and written to.
     pub fn new(state: STATE, aligned: &'d mut [u8]) -> Self {
         assert_eq!(aligned.len(), STATE::WRITE_SIZE);
+        // assert if any byte of STATE::ERASE_VALUE is one of our magic bytes
+        assert!(STATE::ERASE_VALUE
+            .iter()
+            .any(|&b| !(b == PROGRESS_MAGIC || b == BOOT_MAGIC || b == SWAP_MAGIC || b == DFU_DETACH_MAGIC)));
         Self { state, aligned }
     }
 
@@ -375,11 +379,11 @@ impl<'d, STATE: NorFlash> BlockingFirmwareState<'d, STATE> {
             // Read progress validity
             self.state.read(STATE::WRITE_SIZE as u32, &mut self.aligned)?;
 
-            if self.aligned.iter().any(|&b| b != STATE_ERASE_VALUE) {
+            if self.aligned != STATE::ERASE_VALUE {
                 // The current progress validity marker is invalid
             } else {
                 // Invalidate progress
-                self.aligned.fill(!STATE_ERASE_VALUE);
+                self.aligned.fill(PROGRESS_MAGIC);
                 self.state.write(STATE::WRITE_SIZE as u32, &self.aligned)?;
             }
 
