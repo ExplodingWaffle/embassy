@@ -44,6 +44,10 @@ sha1 = "0.10.5"
 critical-section = { version = "1.1.1", features = ["std"] }
 ed25519-dalek = { version = "2", default-features = false, features = ["std", "rand_core", "digest"]  }
 
+[patch.crates-io]
+embedded-storage = { git = "https://github.com/ExplodingWaffle/embedded-storage" }
+embedded-storage-async = { git = "https://github.com/ExplodingWaffle/embedded-storage" }
+
 [features]
 ed25519-dalek = ["dep:ed25519-dalek", "_verify"]
 ed25519-salty = ["dep:salty", "_verify"]

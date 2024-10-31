@@ -5,7 +5,7 @@ use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 use embassy_sync::blocking_mutex::Mutex;
 use embedded_storage::nor_flash::{NorFlash, NorFlashError, NorFlashErrorKind};
 
-use crate::{State, DFU_DETACH_MAGIC, REVERT_MAGIC, STATE_ERASE_VALUE, SWAP_MAGIC};
+use crate::{State, DFU_DETACH_MAGIC, REVERT_MAGIC, PROGRESS_MAGIC, SWAP_MAGIC};
 
 /// Errors returned by bootloader
 #[derive(PartialEq, Eq, Debug)]
@@ -269,7 +269,7 @@ impl<ACTIVE: NorFlash, DFU: NorFlash, STATE: NorFlash> BootLoader<ACTIVE, DFU, S
                 let state_word = &mut aligned_buf[..STATE::WRITE_SIZE];
 
                 // Invalidate progress
-                state_word.fill(!STATE_ERASE_VALUE);
+                state_word.fill(PROGRESS_MAGIC);
                 self.state.write(STATE::WRITE_SIZE as u32, state_word)?;
 
                 // Clear magic and progress
@@ -296,7 +296,7 @@ impl<ACTIVE: NorFlash, DFU: NorFlash, STATE: NorFlash> BootLoader<ACTIVE, DFU, S
         let state_word = &mut aligned_buf[..write_size as usize];
 
         self.state.read(write_size, state_word)?;
-        if state_word.iter().any(|&b| b != STATE_ERASE_VALUE) {
+        if state_word != STATE::ERASE_VALUE {
             // Progress is invalid
             return Ok(max_index);
         }
@@ -304,7 +304,7 @@ impl<ACTIVE: NorFlash, DFU: NorFlash, STATE: NorFlash> BootLoader<ACTIVE, DFU, S
         for index in 0..max_index {
             self.state.read((2 + index) as u32 * write_size, state_word)?;
 
-            if state_word.iter().any(|&b| b == STATE_ERASE_VALUE) {
+            if state_word == STATE::ERASE_VALUE {
                 return Ok(index);
             }
         }
@@ -313,7 +313,7 @@ impl<ACTIVE: NorFlash, DFU: NorFlash, STATE: NorFlash> BootLoader<ACTIVE, DFU, S
 
     fn update_progress(&mut self, progress_index: usize, aligned_buf: &mut [u8]) -> Result<(), BootError> {
         let state_word = &mut aligned_buf[..STATE::WRITE_SIZE];
-        state_word.fill(!STATE_ERASE_VALUE);
+        state_word.fill(PROGRESS_MAGIC);
         self.state
             .write((2 + progress_index) as u32 * STATE::WRITE_SIZE as u32, state_word)?;
         Ok(())
