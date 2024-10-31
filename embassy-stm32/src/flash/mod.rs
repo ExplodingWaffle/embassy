@@ -14,6 +14,8 @@ pub use common::*;
 pub use crate::_generated::flash_regions::*;
 pub use crate::_generated::MAX_ERASE_SIZE;
 pub use crate::pac::{FLASH_BASE, FLASH_SIZE, WRITE_SIZE};
+//todo update metapac
+pub const ERASE_VALUE: u8 = 0xFF;
 
 /// Get whether the default flash layout is being used.
 ///
