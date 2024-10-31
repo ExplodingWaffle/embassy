@@ -20,6 +20,8 @@ pub use crate::_generated::flash_regions::*;
 #[cfg(eeprom)]
 pub use crate::_generated::{EEPROM_BASE, EEPROM_SIZE};
 pub use crate::_generated::{FLASH_BASE, FLASH_SIZE, MAX_ERASE_SIZE, WRITE_SIZE};
+//todo update metapac
+pub const ERASE_VALUE: u8 = 0xFF;
 
 /// Get all flash regions.
 pub fn get_flash_regions() -> &'static [&'static FlashRegion] {

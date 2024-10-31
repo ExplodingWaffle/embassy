@@ -4,8 +4,8 @@ use core::sync::atomic::{fence, Ordering};
 use embassy_hal_internal::drop::OnDrop;
 
 use super::{
-    family, get_flash_regions, Async, Blocking, Error, FlashBank, FlashLayout, FlashRegion, FlashSector, FLASH_SIZE,
-    MAX_ERASE_SIZE, READ_SIZE, WRITE_SIZE,
+    family, get_flash_regions, Async, Blocking, Error, FlashBank, FlashLayout, FlashRegion, FlashSector, ERASE_VALUE,
+    FLASH_SIZE, MAX_ERASE_SIZE, READ_SIZE, WRITE_SIZE,
 };
 use crate::Peri;
 use crate::_generated::FLASH_BASE;
@@ -234,6 +234,7 @@ impl<MODE> embedded_storage::nor_flash::ReadNorFlash for Flash<'_, MODE> {
 impl<MODE> embedded_storage::nor_flash::NorFlash for Flash<'_, MODE> {
     const WRITE_SIZE: usize = WRITE_SIZE;
     const ERASE_SIZE: usize = MAX_ERASE_SIZE;
+    const ERASE_VALUE: &'static [u8] = &[ERASE_VALUE; WRITE_SIZE];
 
     fn write(&mut self, offset: u32, bytes: &[u8]) -> Result<(), Self::Error> {
         self.blocking_write(offset, bytes)
@@ -293,6 +294,7 @@ foreach_flash_region! {
         impl embedded_storage::nor_flash::NorFlash for crate::_generated::flash_regions::$type_name<'_, Blocking> {
             const WRITE_SIZE: usize = $write_size;
             const ERASE_SIZE: usize = $erase_size;
+            const ERASE_VALUE: &'static [u8] = &[ERASE_VALUE; $write_size];
 
             fn write(&mut self, offset: u32, bytes: &[u8]) -> Result<(), Self::Error> {
                 self.blocking_write(offset, bytes)

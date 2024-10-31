@@ -7,7 +7,7 @@ use embassy_sync::mutex::Mutex;
 
 use super::{
     blocking_read, ensure_sector_aligned, family, get_flash_regions, get_sector, Async, Error, Flash, FlashLayout,
-    FLASH_BASE, FLASH_SIZE, WRITE_SIZE,
+    ERASE_VALUE, FLASH_BASE, FLASH_SIZE, WRITE_SIZE,
 };
 use crate::interrupt::InterruptExt;
 use crate::peripherals::FLASH;
@@ -78,6 +78,7 @@ impl embedded_storage_async::nor_flash::ReadNorFlash for Flash<'_, Async> {
 impl embedded_storage_async::nor_flash::NorFlash for Flash<'_, Async> {
     const WRITE_SIZE: usize = WRITE_SIZE;
     const ERASE_SIZE: usize = super::MAX_ERASE_SIZE;
+    const ERASE_VALUE: &'static [u8] = &[ERASE_VALUE; WRITE_SIZE];
 
     async fn write(&mut self, offset: u32, bytes: &[u8]) -> Result<(), Self::Error> {
         self.write(offset, bytes).await
@@ -169,7 +170,7 @@ foreach_flash_region! {
             }
         }
 
-                impl embedded_storage_async::nor_flash::ReadNorFlash for crate::_generated::flash_regions::$type_name<'_, Async> {
+        impl embedded_storage_async::nor_flash::ReadNorFlash for crate::_generated::flash_regions::$type_name<'_, Async> {
             const READ_SIZE: usize = super::READ_SIZE;
 
             async fn read(&mut self, offset: u32, bytes: &mut [u8]) -> Result<(), Self::Error> {
@@ -181,9 +182,10 @@ foreach_flash_region! {
             }
         }
 
-                impl embedded_storage_async::nor_flash::NorFlash for crate::_generated::flash_regions::$type_name<'_, Async> {
+        impl embedded_storage_async::nor_flash::NorFlash for crate::_generated::flash_regions::$type_name<'_, Async> {
             const WRITE_SIZE: usize = $write_size;
             const ERASE_SIZE: usize = $erase_size;
+            const ERASE_VALUE: &'static [u8] = super::ERASE_VALUE;
 
             async fn write(&mut self, offset: u32, bytes: &[u8]) -> Result<(), Self::Error> {
                 self.write(offset, bytes).await
