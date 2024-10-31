@@ -129,6 +129,7 @@ impl<T: embedded_storage_async::nor_flash::ReadNorFlash> embedded_storage_async:
 impl<T: embedded_storage_async::nor_flash::NorFlash> embedded_storage_async::nor_flash::NorFlash for YieldingAsync<T> {
     const WRITE_SIZE: usize = T::WRITE_SIZE;
     const ERASE_SIZE: usize = T::ERASE_SIZE;
+    const ERASE_VALUE: &'static [u8] = T::ERASE_VALUE;
 
     async fn write(&mut self, offset: u32, bytes: &[u8]) -> Result<(), Self::Error> {
         self.wrapped.write(offset, bytes).await?;

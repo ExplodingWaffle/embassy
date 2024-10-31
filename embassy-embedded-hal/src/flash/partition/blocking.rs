@@ -81,6 +81,7 @@ impl<M: RawMutex, T: NorFlash> ReadNorFlash for BlockingPartition<'_, M, T> {
 impl<M: RawMutex, T: NorFlash> NorFlash for BlockingPartition<'_, M, T> {
     const WRITE_SIZE: usize = T::WRITE_SIZE;
     const ERASE_SIZE: usize = T::ERASE_SIZE;
+    const ERASE_VALUE: &'static [u8] = T::ERASE_VALUE;
 
     fn write(&mut self, offset: u32, bytes: &[u8]) -> Result<(), Self::Error> {
         if offset + bytes.len() as u32 > self.size {
