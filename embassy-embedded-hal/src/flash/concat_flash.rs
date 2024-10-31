@@ -76,6 +76,21 @@ where
     }
 }
 
+const fn assert_same_erase(first: &'static [u8], second: &'static [u8]) {
+    // slices have to be compared element-wise since they can't just be
+    // compared in const
+    if first.len() != second.len() {
+        panic!("Flashes must have the same ERASE_VALUE in order to be concatenated");
+    }
+    let mut i = first.len();
+    while i != 0 {
+        if first[i] != second[i] {
+            panic!("Flashes must have the same ERASE_VALUE in order to be concatenated");
+        }
+        i = i - 1;
+    }
+}
+
 impl<First, Second, E> NorFlash for ConcatFlash<First, Second>
 where
     First: NorFlash<Error = E>,
@@ -84,6 +99,10 @@ where
 {
     const WRITE_SIZE: usize = get_write_size(First::WRITE_SIZE, Second::WRITE_SIZE);
     const ERASE_SIZE: usize = get_max_erase_size(First::ERASE_SIZE, Second::ERASE_SIZE);
+    const ERASE_VALUE: &'static [u8] = const {
+        assert_same_erase(First::ERASE_VALUE, Second::ERASE_VALUE);
+        First::ERASE_VALUE
+    };
 
     fn write(&mut self, mut offset: u32, mut bytes: &[u8]) -> Result<(), E> {
         if offset < self.0.capacity() as u32 {
@@ -152,6 +171,10 @@ where
 {
     const WRITE_SIZE: usize = get_write_size(First::WRITE_SIZE, Second::WRITE_SIZE);
     const ERASE_SIZE: usize = get_max_erase_size(First::ERASE_SIZE, Second::ERASE_SIZE);
+    const ERASE_VALUE: &'static [u8] = const {
+        assert_same_erase(First::ERASE_VALUE, Second::ERASE_VALUE);
+        First::ERASE_VALUE
+    };
 
     async fn write(&mut self, mut offset: u32, mut bytes: &[u8]) -> Result<(), E> {
         if offset < self.0.capacity() as u32 {

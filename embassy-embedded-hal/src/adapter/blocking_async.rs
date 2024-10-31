@@ -122,6 +122,7 @@ where
 {
     const WRITE_SIZE: usize = <T as NorFlash>::WRITE_SIZE;
     const ERASE_SIZE: usize = <T as NorFlash>::ERASE_SIZE;
+    const ERASE_VALUE: &'static [u8] = <T as NorFlash>::ERASE_VALUE;
 
     async fn write(&mut self, offset: u32, data: &[u8]) -> Result<(), Self::Error> {
         self.wrapped.write(offset, data)
