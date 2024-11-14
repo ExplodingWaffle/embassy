@@ -6,6 +6,7 @@ use embassy_usb::control::{InResponse, OutResponse, Recipient, RequestType};
 use embassy_usb::driver::Driver;
 use embassy_usb::{Builder, Handler};
 use embedded_storage::nor_flash::NorFlash;
+use embassy_sync::signal::Signal;
 
 use crate::consts::{
     DfuAttributes, Request, State, Status, APPN_SPEC_SUBCLASS_DFU, DESC_DFU_FUNCTIONAL, DFU_PROTOCOL_RT,
@@ -21,11 +22,12 @@ pub struct Control<'d, STATE: NorFlash, RST: Reset> {
     timeout: Option<Duration>,
     detach_start: Option<Instant>,
     _rst: PhantomData<RST>,
+    signal: &'d Signal<embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex, ()>,
 }
 
 impl<'d, STATE: NorFlash, RST: Reset> Control<'d, STATE, RST> {
     /// Create a new DFU instance to expose a DFU interface.
-    pub fn new(firmware_state: BlockingFirmwareState<'d, STATE>, attrs: DfuAttributes) -> Self {
+    pub fn new(firmware_state: BlockingFirmwareState<'d, STATE>, attrs: DfuAttributes, signal: &'d Signal<embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex, ()>) -> Self {
         Control {
             firmware_state,
             attrs,
@@ -33,6 +35,7 @@ impl<'d, STATE: NorFlash, RST: Reset> Control<'d, STATE, RST> {
             detach_start: None,
             timeout: None,
             _rst: PhantomData,
+            signal
         }
     }
 }
@@ -73,6 +76,7 @@ impl<'d, STATE: NorFlash, RST: Reset> Handler for Control<'d, STATE, RST> {
                 self.detach_start = Some(Instant::now());
                 self.timeout = Some(Duration::from_millis(req.value as u64));
                 self.state = State::AppDetach;
+                self.signal.signal(());
                 Some(OutResponse::Accepted)
             }
             _ => None,
