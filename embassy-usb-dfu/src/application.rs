@@ -1,4 +1,5 @@
 use embassy_boot::BlockingFirmwareState;
+use embassy_sync::signal::Signal;
 use embassy_time::{Duration, Instant};
 use embassy_usb::control::{InResponse, OutResponse, Recipient, RequestType};
 use embassy_usb::driver::Driver;
@@ -35,6 +36,7 @@ pub struct Control<MARK: DfuMarker, RST: Reset> {
     timeout: Option<Duration>,
     detach_start: Option<Instant>,
     reset: RST,
+    signal: &'d Signal<embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex, ()>,
 }
 
 impl<MARK: DfuMarker, RST: Reset> Control<MARK, RST> {
@@ -47,6 +49,7 @@ impl<MARK: DfuMarker, RST: Reset> Control<MARK, RST> {
             detach_start: None,
             timeout: None,
             reset,
+            signal,
         }
     }
 }
@@ -84,6 +87,7 @@ impl<MARK: DfuMarker, RST: Reset> Handler for Control<MARK, RST> {
                 self.detach_start = Some(Instant::now());
                 self.timeout = Some(Duration::from_millis(req.value as u64));
                 self.state = State::AppDetach;
+                self.signal.signal(());
                 if self.attrs.contains(DfuAttributes::WILL_DETACH) {
                     trace!("Received DETACH, performing reset");
                     self.reset();
