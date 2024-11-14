@@ -87,6 +87,9 @@ impl<MARK: DfuMarker, RST: Reset> Handler for Control<MARK, RST> {
                 self.detach_start = Some(Instant::now());
                 self.timeout = Some(Duration::from_millis(req.value as u64));
                 self.state = State::AppDetach;
+                self.firmware_state
+                    .mark_dfu()
+                    .expect("Failed to mark DFU mode in bootloader");
                 self.signal.signal(());
                 if self.attrs.contains(DfuAttributes::WILL_DETACH) {
                     trace!("Received DETACH, performing reset");
