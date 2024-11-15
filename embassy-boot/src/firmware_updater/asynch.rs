@@ -6,7 +6,7 @@ use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 use embedded_storage_async::nor_flash::NorFlash;
 
 use super::FirmwareUpdaterConfig;
-use crate::{FirmwareUpdaterError, State, BOOT_MAGIC, DFU_DETACH_MAGIC, PROGRESS_MAGIC, SWAP_MAGIC};
+use crate::{FirmwareUpdaterError, State, BOOT_MAGIC, DFU_DETACH_MAGIC, PROGRESS_MAGIC, SWAP_MAGIC, REVERT_MAGIC};
 
 /// FirmwareUpdater is an application API for interacting with the BootLoader without the ability to
 /// 'mess up' the internal bootloader state
@@ -299,7 +299,7 @@ impl<'d, STATE: NorFlash> FirmwareState<'d, STATE> {
         // assert_eq!(STATE::ERASE_VALUE, &[]);
         assert!(STATE::ERASE_VALUE
             .iter()
-            .any(|&b| !(b == PROGRESS_MAGIC || b == BOOT_MAGIC || b == SWAP_MAGIC || b == DFU_DETACH_MAGIC)));
+            .any(|&b| !(b == PROGRESS_MAGIC || b == BOOT_MAGIC || b == SWAP_MAGIC || b == DFU_DETACH_MAGIC || b == REVERT_MAGIC )));
         Self { state, aligned }
     }
 
