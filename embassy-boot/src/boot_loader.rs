@@ -302,7 +302,7 @@ impl<ACTIVE: NorFlash, DFU: NorFlash, STATE: NorFlash> BootLoader<ACTIVE, DFU, S
         let state_word = &mut aligned_buf[..write_size as usize];
 
         self.state.read(write_size, state_word)?;
-        if state_word.iter().any(|&b| b == PROGRESS_MAGIC) {
+        if state_word != STATE::ERASE_VALUE {
             // Progress is invalid
             trace!("Progress is invalid");
             trace!("state_word: {:x?}", state_word);
