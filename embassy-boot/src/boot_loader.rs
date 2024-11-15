@@ -5,7 +5,7 @@ use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 use embassy_sync::blocking_mutex::Mutex;
 use embedded_storage::nor_flash::{NorFlash, NorFlashError, NorFlashErrorKind};
 
-use crate::{State, DFU_DETACH_MAGIC, REVERT_MAGIC, PROGRESS_MAGIC, SWAP_MAGIC};
+use crate::{State, BOOT_MAGIC, DFU_DETACH_MAGIC, REVERT_MAGIC, PROGRESS_MAGIC, SWAP_MAGIC};
 
 /// Errors returned by bootloader
 #[derive(PartialEq, Eq, Debug)]
@@ -155,6 +155,10 @@ impl<ACTIVE: NorFlash, DFU: NorFlash, STATE: NorFlash> BootLoader<ACTIVE, DFU, S
     /// - All partitions must be aligned with the PAGE_SIZE const generic parameter.
     /// - The dfu partition must be at least PAGE_SIZE bigger than the active partition.
     pub fn new(config: BootLoaderConfig<ACTIVE, DFU, STATE>) -> Self {
+        assert!(STATE::ERASE_VALUE
+            .iter()
+            .any(|&b| !(b == PROGRESS_MAGIC || b == BOOT_MAGIC || b == SWAP_MAGIC || b == DFU_DETACH_MAGIC || b == REVERT_MAGIC )));
+
         Self {
             active: config.active,
             dfu: config.dfu,
@@ -287,6 +291,8 @@ impl<ACTIVE: NorFlash, DFU: NorFlash, STATE: NorFlash> BootLoader<ACTIVE, DFU, S
         let page_count = self.active.capacity() / Self::PAGE_SIZE as usize;
         let progress = self.current_progress(aligned_buf)?;
 
+        trace!("Progress: {}", progress);
+
         Ok(progress >= page_count * 2)
     }
 
@@ -298,6 +304,9 @@ impl<ACTIVE: NorFlash, DFU: NorFlash, STATE: NorFlash> BootLoader<ACTIVE, DFU, S
         self.state.read(write_size, state_word)?;
         if state_word != STATE::ERASE_VALUE {
             // Progress is invalid
+            trace!("Progress is invalid");
+            trace!("state_word: {:x?}", state_word);
+            trace!("erase val: {:x?}", STATE::ERASE_VALUE);
             return Ok(max_index);
         }
 
@@ -406,16 +415,7 @@ impl<ACTIVE: NorFlash, DFU: NorFlash, STATE: NorFlash> BootLoader<ACTIVE, DFU, S
     fn read_state(&mut self, aligned_buf: &mut [u8]) -> Result<State, BootError> {
         let state_word = &mut aligned_buf[..STATE::WRITE_SIZE];
         self.state.read(0, state_word)?;
-
-        if !state_word.iter().any(|&b| b != SWAP_MAGIC) {
-            Ok(State::Swap)
-        } else if !state_word.iter().any(|&b| b != DFU_DETACH_MAGIC) {
-            Ok(State::DfuDetach)
-        } else if !state_word.iter().any(|&b| b != REVERT_MAGIC) {
-            Ok(State::Revert)
-        } else {
-            Ok(State::Boot)
-        }
+        Ok(State::from(state_word))
     }
 }
 
