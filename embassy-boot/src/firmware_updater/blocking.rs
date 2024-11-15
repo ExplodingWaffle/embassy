@@ -375,20 +375,28 @@ impl<'d, STATE: NorFlash> BlockingFirmwareState<'d, STATE> {
     fn set_magic(&mut self, magic: u8) -> Result<(), FirmwareUpdaterError> {
         self.state.read(0, &mut self.aligned)?;
 
+        trace!("setting magic. current magic: {:x?}", self.aligned);
+
         if self.aligned.iter().any(|&b| b != magic) {
             // Read progress validity
             self.state.read(STATE::WRITE_SIZE as u32, &mut self.aligned)?;
 
+            trace!("setting magic. current progress: {:x?}", self.aligned);
+
             if self.aligned != STATE::ERASE_VALUE {
                 // The current progress validity marker is invalid
+                trace!("progress is invalid");
             } else {
                 // Invalidate progress
+                trace!("progress is valid");
                 self.aligned.fill(PROGRESS_MAGIC);
                 self.state.write(STATE::WRITE_SIZE as u32, &self.aligned)?;
             }
 
             // Clear magic and progress
             self.state.erase(0, self.state.capacity() as u32)?;
+
+            trace!("setting magic. erasing state");
 
             // Set magic
             self.aligned.fill(magic);

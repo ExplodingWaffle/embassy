@@ -86,6 +86,7 @@ impl<'d, DFU: NorFlash, STATE: NorFlash, RST: Reset, const BLOCK_SIZE: usize> Ha
                 Some(OutResponse::Accepted)
             }
             Ok(Request::Dnload) if self.attrs.contains(DfuAttributes::CAN_DOWNLOAD) => {
+                trace!("Received DNLOAD request");
                 if req.value == 0 {
                     info!("Download starting");
                     self.state = State::Download;
@@ -131,6 +132,7 @@ impl<'d, DFU: NorFlash, STATE: NorFlash, RST: Reset, const BLOCK_SIZE: usize> Ha
 
                     match update_res {
                         Ok(_) => {
+                            trace!("Firmware marked as updated");
                             self.status = Status::Ok;
                             self.state = State::ManifestSync;
                             info!("Update complete");
@@ -145,6 +147,7 @@ impl<'d, DFU: NorFlash, STATE: NorFlash, RST: Reset, const BLOCK_SIZE: usize> Ha
                     debug!("Writing {} bytes at {}", data.len(), self.offset);
                     match self.updater.write_firmware(self.offset, self.buf.as_ref()) {
                         Ok(_) => {
+                            trace!("Wrote firmware chunk at offset {}", self.offset);
                             self.status = Status::Ok;
                             self.state = State::DlSync;
                             self.offset += data.len();
@@ -191,6 +194,7 @@ impl<'d, DFU: NorFlash, STATE: NorFlash, RST: Reset, const BLOCK_SIZE: usize> Ha
                 Some(InResponse::Accepted(&buf[0..6]))
             }
             Ok(Request::GetState) => {
+                trace!("Received GETSTATE request");
                 buf[0] = self.state as u8;
                 Some(InResponse::Accepted(&buf[0..1]))
             }
