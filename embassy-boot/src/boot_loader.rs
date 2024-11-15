@@ -302,13 +302,15 @@ impl<ACTIVE: NorFlash, DFU: NorFlash, STATE: NorFlash> BootLoader<ACTIVE, DFU, S
         let state_word = &mut aligned_buf[..write_size as usize];
 
         self.state.read(write_size, state_word)?;
-        if state_word != STATE::ERASE_VALUE {
+        if state_word.iter().any(|&b| b == PROGRESS_MAGIC) {
             // Progress is invalid
             trace!("Progress is invalid");
             trace!("state_word: {:x?}", state_word);
             trace!("erase val: {:x?}", STATE::ERASE_VALUE);
             return Ok(max_index);
         }
+
+        trace!("Progress is valid");
 
         for index in 0..max_index {
             self.state.read((2 + index) as u32 * write_size, state_word)?;
@@ -321,6 +323,7 @@ impl<ACTIVE: NorFlash, DFU: NorFlash, STATE: NorFlash> BootLoader<ACTIVE, DFU, S
     }
 
     fn update_progress(&mut self, progress_index: usize, aligned_buf: &mut [u8]) -> Result<(), BootError> {
+        trace!("Update progress: {}", progress_index);
         let state_word = &mut aligned_buf[..STATE::WRITE_SIZE];
         state_word.fill(PROGRESS_MAGIC);
         self.state
@@ -335,6 +338,7 @@ impl<ACTIVE: NorFlash, DFU: NorFlash, STATE: NorFlash> BootLoader<ACTIVE, DFU, S
         to_offset: u32,
         aligned_buf: &mut [u8],
     ) -> Result<(), BootError> {
+        trace!("Copy page once to active: idx: {}, {} -> {}", progress_index, from_offset, to_offset);
         if self.current_progress(aligned_buf)? <= progress_index {
             let page_size = Self::PAGE_SIZE as u32;
 
@@ -357,6 +361,7 @@ impl<ACTIVE: NorFlash, DFU: NorFlash, STATE: NorFlash> BootLoader<ACTIVE, DFU, S
         to_offset: u32,
         aligned_buf: &mut [u8],
     ) -> Result<(), BootError> {
+        trace!("Copy page once to dfu: idx: {}, {} -> {}", progress_index, from_offset, to_offset);
         if self.current_progress(aligned_buf)? <= progress_index {
             let page_size = Self::PAGE_SIZE as u32;
 
@@ -373,6 +378,7 @@ impl<ACTIVE: NorFlash, DFU: NorFlash, STATE: NorFlash> BootLoader<ACTIVE, DFU, S
     }
 
     fn swap(&mut self, aligned_buf: &mut [u8]) -> Result<(), BootError> {
+        trace!("Swap");
         let page_count = self.active.capacity() as u32 / Self::PAGE_SIZE;
         for page_num in 0..page_count {
             let progress_index = (page_num * 2) as usize;
@@ -394,6 +400,7 @@ impl<ACTIVE: NorFlash, DFU: NorFlash, STATE: NorFlash> BootLoader<ACTIVE, DFU, S
     }
 
     fn revert(&mut self, aligned_buf: &mut [u8]) -> Result<(), BootError> {
+        trace!("Revert");
         let page_count = self.active.capacity() as u32 / Self::PAGE_SIZE;
         for page_num in 0..page_count {
             let progress_index = (page_count * 2 + page_num * 2) as usize;

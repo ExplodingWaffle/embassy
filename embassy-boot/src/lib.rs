@@ -24,7 +24,7 @@ pub(crate) const REVERT_MAGIC: u8 = 0xC0;
 pub(crate) const BOOT_MAGIC: u8 = 0xD0;
 pub(crate) const SWAP_MAGIC: u8 = 0xF0;
 pub(crate) const DFU_DETACH_MAGIC: u8 = 0xE0;
-pub(crate) const PROGRESS_MAGIC: u8 = 0xB0;
+pub(crate) const PROGRESS_MAGIC: u8 = 0xB1;
 
 /// The state of the bootloader after running prepare.
 #[derive(PartialEq, Eq, Debug)]

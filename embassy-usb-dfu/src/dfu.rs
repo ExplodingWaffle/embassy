@@ -55,10 +55,12 @@ impl<'d, DFU: NorFlash, STATE: NorFlash, RST: Reset, const BLOCK_SIZE: usize> Ha
         }
         match Request::try_from(req.request) {
             Ok(Request::Abort) => {
+                trace!("Received ABORT request");
                 self.reset_state();
                 Some(OutResponse::Accepted)
             }
             Ok(Request::Dnload) if self.attrs.contains(DfuAttributes::CAN_DOWNLOAD) => {
+                trace!("Received DNLOAD request");
                 if req.value == 0 {
                     self.state = State::Download;
                     self.offset = 0;
@@ -70,10 +72,12 @@ impl<'d, DFU: NorFlash, STATE: NorFlash, RST: Reset, const BLOCK_SIZE: usize> Ha
                 if req.length == 0 {
                     match self.updater.mark_updated() {
                         Ok(_) => {
+                            trace!("Firmware marked as updated");
                             self.status = Status::Ok;
                             self.state = State::ManifestSync;
                         }
                         Err(e) => {
+                            trace!("Error marking firmware as updated: {:?}", e);
                             self.state = State::Error;
                             match e {
                                 embassy_boot::FirmwareUpdaterError::Flash(e) => match e {
@@ -88,6 +92,7 @@ impl<'d, DFU: NorFlash, STATE: NorFlash, RST: Reset, const BLOCK_SIZE: usize> Ha
                     }
                 } else {
                     if self.state != State::Download {
+                        trace!("Unexpected DNLOAD while chip is waiting for a GETSTATUS");
                         // Unexpected DNLOAD while chip is waiting for a GETSTATUS
                         self.status = Status::ErrUnknown;
                         self.state = State::Error;
@@ -95,11 +100,13 @@ impl<'d, DFU: NorFlash, STATE: NorFlash, RST: Reset, const BLOCK_SIZE: usize> Ha
                     }
                     match self.updater.write_firmware(self.offset, buf.as_ref()) {
                         Ok(_) => {
+                            trace!("Wrote firmware chunk at offset {}", self.offset);
                             self.status = Status::Ok;
                             self.state = State::DlSync;
                             self.offset += data.len();
                         }
                         Err(e) => {
+                            trace!("Error writing firmware: {:?}", e);
                             self.state = State::Error;
                             match e {
                                 embassy_boot::FirmwareUpdaterError::Flash(e) => match e {
@@ -118,6 +125,7 @@ impl<'d, DFU: NorFlash, STATE: NorFlash, RST: Reset, const BLOCK_SIZE: usize> Ha
             }
             Ok(Request::Detach) => Some(OutResponse::Accepted), // Device is already in DFU mode
             Ok(Request::ClrStatus) => {
+                trace!("Received CLRSTATUS request");
                 self.reset_state();
                 Some(OutResponse::Accepted)
             }
@@ -135,6 +143,7 @@ impl<'d, DFU: NorFlash, STATE: NorFlash, RST: Reset, const BLOCK_SIZE: usize> Ha
         }
         match Request::try_from(req.request) {
             Ok(Request::GetStatus) => {
+                trace!("Received GETSTATUS request");
                 //TODO: Configurable poll timeout, ability to add string for Vendor error
                 buf[0..6].copy_from_slice(&[self.status as u8, 0x32, 0x00, 0x00, self.state as u8, 0x00]);
                 match self.state {
@@ -146,6 +155,7 @@ impl<'d, DFU: NorFlash, STATE: NorFlash, RST: Reset, const BLOCK_SIZE: usize> Ha
                 Some(InResponse::Accepted(&buf[0..6]))
             }
             Ok(Request::GetState) => {
+                trace!("Received GETSTATE request");
                 buf[0] = self.state as u8;
                 Some(InResponse::Accepted(&buf[0..1]))
             }
