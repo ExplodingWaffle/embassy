@@ -80,7 +80,7 @@ impl<MARK: DfuMarker, RST: Reset> Handler for Control<MARK, RST> {
             return None;
         }
 
-        trace!("Received request {}", req);
+        trace!("Received request {:?}", req);
 
         match Request::try_from(req.request) {
             Ok(Request::Detach) => {
@@ -112,7 +112,7 @@ impl<MARK: DfuMarker, RST: Reset> Handler for Control<MARK, RST> {
             return None;
         }
 
-        trace!("Received request {}", req);
+        trace!("Received request {:?}", req);
 
         match Request::try_from(req.request) {
             Ok(Request::GetStatus) => {
