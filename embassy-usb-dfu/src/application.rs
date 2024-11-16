@@ -68,7 +68,7 @@ impl<'d, STATE: NorFlash, RST: Reset> Handler for Control<'d, STATE, RST> {
             return None;
         }
 
-        trace!("Received request {}", req);
+        trace!("Received request {:?}", req);
 
         match Request::try_from(req.request) {
             Ok(Request::Detach) => {
@@ -95,7 +95,7 @@ impl<'d, STATE: NorFlash, RST: Reset> Handler for Control<'d, STATE, RST> {
             return None;
         }
 
-        trace!("Received request {}", req);
+        trace!("Received request {:?}", req);
 
         match Request::try_from(req.request) {
             Ok(Request::GetStatus) => {
