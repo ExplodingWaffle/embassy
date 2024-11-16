@@ -139,7 +139,7 @@ pub fn usb_dfu<'d, D: Driver<'d>, MARK: DfuMarker, RST: Reset>(
     timeout: Duration,
     func_modifier: impl Fn(&mut FunctionBuilder<'_, 'd, D>),
 ) {
-    let mut func = builder.function(0x00, 0x00, 0x00);
+    let mut func = builder.function(USB_CLASS_APPN_SPEC, APPN_SPEC_SUBCLASS_DFU, DFU_PROTOCOL_RT);
 
     // Here we give users the opportunity to add their own function level MSOS headers for instance.
     // This is useful when DFU functionality is part of a composite USB device.
