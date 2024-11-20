@@ -1,12 +1,13 @@
 use core::marker::PhantomData;
 
 use embassy_boot::BlockingFirmwareState;
+use embassy_sync::signal::Signal;
 use embassy_time::{Duration, Instant};
 use embassy_usb::control::{InResponse, OutResponse, Recipient, RequestType};
 use embassy_usb::driver::Driver;
+use embassy_usb::msos::{self, windows_version};
 use embassy_usb::{Builder, Handler};
 use embedded_storage::nor_flash::NorFlash;
-use embassy_sync::signal::Signal;
 
 use crate::consts::{
     DfuAttributes, Request, State, Status, APPN_SPEC_SUBCLASS_DFU, DESC_DFU_FUNCTIONAL, DFU_PROTOCOL_RT,
@@ -27,7 +28,11 @@ pub struct Control<'d, STATE: NorFlash, RST: Reset> {
 
 impl<'d, STATE: NorFlash, RST: Reset> Control<'d, STATE, RST> {
     /// Create a new DFU instance to expose a DFU interface.
-    pub fn new(firmware_state: BlockingFirmwareState<'d, STATE>, attrs: DfuAttributes, signal: &'d Signal<embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex, ()>) -> Self {
+    pub fn new(
+        firmware_state: BlockingFirmwareState<'d, STATE>,
+        attrs: DfuAttributes,
+        signal: &'d Signal<embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex, ()>,
+    ) -> Self {
         Control {
             firmware_state,
             attrs,
@@ -35,7 +40,7 @@ impl<'d, STATE: NorFlash, RST: Reset> Control<'d, STATE, RST> {
             detach_start: None,
             timeout: None,
             _rst: PhantomData,
-            signal
+            signal,
         }
     }
 }
@@ -122,6 +127,15 @@ pub fn usb_dfu<'d, D: Driver<'d>, STATE: NorFlash, RST: Reset>(
     timeout: Duration,
 ) {
     let mut func = builder.function(USB_CLASS_APPN_SPEC, APPN_SPEC_SUBCLASS_DFU, DFU_PROTOCOL_RT);
+
+    const USB_DEVICE_CLASS_GUID: &str = "{AFB9A6FB-30BA-44BC-9232-806CFC875321}";
+    const DEVICE_INTERFACE_GUIDS: &[&str] = &[USB_DEVICE_CLASS_GUID];
+    func.msos_feature(msos::CompatibleIdFeatureDescriptor::new("WINUSB", ""));
+    func.msos_feature(msos::RegistryPropertyFeatureDescriptor::new(
+        "DeviceInterfaceGUIDs",
+        msos::PropertyData::RegMultiSz(DEVICE_INTERFACE_GUIDS),
+    ));
+
     let mut iface = func.interface();
     let mut alt = iface.alt_setting(USB_CLASS_APPN_SPEC, APPN_SPEC_SUBCLASS_DFU, DFU_PROTOCOL_RT, None);
     let timeout = timeout.as_millis() as u16;
