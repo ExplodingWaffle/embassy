@@ -41,7 +41,12 @@ pub struct Control<MARK: DfuMarker, RST: Reset> {
 
 impl<MARK: DfuMarker, RST: Reset> Control<MARK, RST> {
     /// Create a new DFU instance to expose a DFU interface.
-    pub fn new(dfu_marker: MARK, attrs: DfuAttributes, reset: RST) -> Self {
+    pub fn new(
+        dfu_marker: MARK,
+        attrs: DfuAttributes,
+        reset: RST,
+        signal: &'d Signal<embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex, ()>,
+    ) -> Self {
         Control {
             dfu_marker,
             attrs,
