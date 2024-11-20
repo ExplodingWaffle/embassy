@@ -3,7 +3,6 @@ use core::marker::PhantomData;
 use embassy_boot::{AlignedBuffer, BlockingFirmwareUpdater};
 use embassy_usb::control::{InResponse, OutResponse, Recipient, RequestType};
 use embassy_usb::driver::Driver;
-use embassy_usb::msos::{self, windows_version};
 use embassy_usb::{Builder, Handler};
 use embedded_storage::nor_flash::{NorFlash, NorFlashErrorKind};
 
@@ -180,16 +179,7 @@ pub fn usb_dfu<'d, D: Driver<'d>, DFU: NorFlash, STATE: NorFlash, RST: Reset, co
     builder: &mut Builder<'d, D>,
     handler: &'d mut Control<'d, DFU, STATE, RST, BLOCK_SIZE>,
 ) {
-    let mut func = builder.function(USB_CLASS_APPN_SPEC, APPN_SPEC_SUBCLASS_DFU, DFU_PROTOCOL_DFU);
-
-    const USB_DEVICE_CLASS_GUID: &str = "{AFB9A6FB-30BA-44BC-9232-806CFC875321}";
-    const DEVICE_INTERFACE_GUIDS: &[&str] = &[USB_DEVICE_CLASS_GUID];
-    func.msos_feature(msos::CompatibleIdFeatureDescriptor::new("WINUSB", ""));
-    func.msos_feature(msos::RegistryPropertyFeatureDescriptor::new(
-        "DeviceInterfaceGUIDs",
-        msos::PropertyData::RegMultiSz(DEVICE_INTERFACE_GUIDS),
-    ));
-
+    let mut func = builder.function(0x00, 0x00, 0x00);
     let mut iface = func.interface();
     let mut alt = iface.alt_setting(USB_CLASS_APPN_SPEC, APPN_SPEC_SUBCLASS_DFU, DFU_PROTOCOL_DFU, None);
     alt.descriptor(
