@@ -56,7 +56,7 @@ impl<'d> LoggerState<'d> {
 }
 
 /// The packet size used in the usb logger, to be used with `create_future_from_class`
-pub const MAX_PACKET_SIZE: u8 = 64;
+pub const MAX_PACKET_SIZE: u8 = 512;
 
 /// The logger handle, which contains a pipe with configurable size for buffering log messages.
 pub struct UsbLogger<const N: usize, T: ReceiverHandler + Send + Sync> {
